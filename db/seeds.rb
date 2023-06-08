@@ -40,9 +40,10 @@ if response.code == "200"
             new_movie = Movie.create(
             title: name["original_title"],
             movie_image: movie["poster_path"],
-            description: movie["overview"]
+            description: movie["overview"],
             release_date: movie["release_date"]
           )
+        end
         
           # Create a review for each movie
           new_movie.reviews.create(
@@ -53,13 +54,10 @@ if response.code == "200"
             )
           )
         end
-  
-        
+     
   
       
-    else
-      puts "API request failed"
-    end
+    
   else
     puts "Failed to connect to the API"
   end
