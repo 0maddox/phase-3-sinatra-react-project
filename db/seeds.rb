@@ -15,7 +15,7 @@ ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 
 
 puts "🌱 Seeding spices..."
 
-url = URI.parse("")
+url = URI.parse("https://api.themoviedb.org/3/discover/movie?api_key=4b8799a0185e3a736326d1c479824722&language=en-US")
 
 http = Net::HTTP.new(url.host, url.port)
 http.use_ssl = true
@@ -27,3 +27,70 @@ response = http.request(request)
 puts response
 
 puts "✅ Done seeding!"
+
+if response.code == "200"
+    data = JSON.parse(response.body)
+    
+    if data["status"] == "OK"
+      movies = data["results"]["movies"]
+  
+  
+      movies.each do |movie|
+            # Create the movie record
+            new_movie = Movie.create(
+            title: name["title"],
+            actor: movie["author"],
+            movie_image: movie["movie_image"],
+            amazon_product_url: movie["amazon_product_url"],
+           producer: movie["producer"],
+            description: movie["description"]
+          )
+        
+          # Create a review for each movie
+          new_movie.reviews.create(
+            comment: "This movie is great!",
+            user: User.create(
+              name: Faker::Name.name,
+              email: Faker::Internet.email
+            )
+          )
+        end
+  
+        
+  
+      
+    else
+      puts "API request failed"
+    end
+  else
+    puts "Failed to connect to the API"
+  end
+  puts "Done seeding."
+  
+  
+  
+  
+  # Define a route that handles the update request
+  put '/update_data' do
+    begin
+      # Parse the request body as JSON
+      request.body.rewind
+      data = JSON.parse(request.body.read)
+  
+     
+      # Return a success response
+  
+      status 200
+      body "Data updated successfully"
+    rescue JSON::ParserError => e
+      # Return a bad request response if the request body is not valid JSON
+      status 400
+      body "Invalid request body: #{e.message}"
+    rescue => e
+      # Log and return a server error response if an error occurs
+  
+      puts "Error updating data: #{e.message}"
+      status 500
+      body "Error updating data"
+    end
+  end
