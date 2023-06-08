@@ -1,4 +1,10 @@
-class CreateMovies.rb < ActiveRecord::Migration[6.1]
-  def change
+class CreateMovies < ActiveRecord::Migration[6.1]
+    def change
+      create_table :movies do |t|
+        t.string :name
+        t.string :author
+  
+        t.timestamps
   end
+end
 end
