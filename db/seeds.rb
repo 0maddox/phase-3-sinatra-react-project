@@ -36,14 +36,12 @@ if response.code == "200"
   
   
       movies.each do |movie|
-            # Create the movie record
+            # Create the movie list
             new_movie = Movie.create(
-            title: name["title"],
-            actor: movie["author"],
-            movie_image: movie["movie_image"],
-            amazon_product_url: movie["amazon_product_url"],
-           producer: movie["producer"],
-            description: movie["description"]
+            title: name["original_title"],
+            movie_image: movie["poster_path"],
+            description: movie["overview"]
+            release_date: movie["release_date"]
           )
         
           # Create a review for each movie

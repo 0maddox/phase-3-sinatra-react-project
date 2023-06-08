@@ -13,8 +13,8 @@
 ActiveRecord::Schema.define(version: 2023_06_08_212923) do
 
   create_table "movies", force: :cascade do |t|
-    t.string "moviename"
-    t.string "actor"
+    t.string "name"
+    t.string "author"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
   end
@@ -25,10 +25,6 @@ ActiveRecord::Schema.define(version: 2023_06_08_212923) do
     t.integer "movie_id"
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
-  end
-
-  create_table "users", force: :cascade do |t|
-    t.string "name"
   end
 
 end
