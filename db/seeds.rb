@@ -5,6 +5,7 @@ puts "Deleting old data..."
 
 Review.destroy_all
 User.destroy_all
+Movie.destroy_all
 
 # Reset auto-increment sequence for User table
 ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 'users'")
@@ -13,66 +14,73 @@ ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 
 
 puts "🌱 Seeding movies..."
 
-# Fetch the JSON data from the API
-url = URI("https://api.themoviedb.org/3/discover/movie")
+# Set up API endpoint and parameters
+api_key = '4b8799a0185e3a736326d1c479824722'
+base_url = 'https://api.themoviedb.org/3'
+discover_endpoint = '/discover/movie'
+language = 'en-US'
+primary_release_date_gte = '2010-01-01'
+primary_release_date_lte = '2022-12-31'
+
+# Construct the API request URL
+url = URI("#{base_url}#{discover_endpoint}")
 url_params = {
-  api_key: '4b8799a0185e3a736326d1c479824722',
-  language: 'en-US',
-  with_genres: '28,16,35,80,99,18,10751,9648,10766,10768,37,10770,10752',
-  'release_date.gte' => '2010-01-01',
-  'release_date.lte' => '2022-12-31',
-  'page' => 1, # Start from the first page
+  api_key: api_key,
+  language: language,
+  'primary_release_date.gte' => primary_release_date_gte,
+  'primary_release_date.lte' => primary_release_date_lte
 }
+url.query = URI.encode_www_form(url_params)
 
-movies_data = [] # Array to store all movies data
+# Send the API request and parse the JSON response
+http = Net::HTTP.new(url.host, url.port)
+http.use_ssl = true
 
-# Send multiple API requests to retrieve all pages of movie data
-loop do
-  # Send the API request and parse the JSON response
-  http = Net::HTTP.new(url.host, url.port)
-  http.use_ssl = true
+request = Net::HTTP::Get.new(url)
+request['Accept'] = 'application/json'
 
-  url.query = URI.encode_www_form(url_params)
+response = http.request(request)
 
-  request = Net::HTTP::Get.new(url)
-  request["Accept"] = 'application/json'
+if response.code == '200'
+  json_data = JSON.parse(response.body)
 
-  response = http.request(request)
+  # Access the 'results' array in the JSON data
+  movies_data = json_data['results']
 
-  if response.code == '200'
-    json_data = JSON.parse(response.body)
+  # Iterate over each movie data and save it to the database
+  movies_data.each do |movie_data|
+    movie = Movie.find_or_initialize_by(id: movie_data['id'])
 
-    # Access the 'results' array in the JSON data and append it to the movies_data array
-    movies_data += json_data['results']
+    # Update the movie attributes
+    movie.title = movie_data['title']
+    movie.description = movie_data['overview']
+    movie.release_date = movie_data['release_date']
+    movie.movie_image = movie_data['poster_path']
 
-    # Increment the page number for the next request
-    url_params['page'] += 1
-
-    # Break the loop if there are no more pages
-    break if json_data['page'] >= json_data['total_pages']
-  else
-    puts "❌ Error fetching movie data: #{response.code} - #{response.message}"
-    break
-  end
-end
-
-# Iterate over each movie data and create/update the corresponding record in the database
-movies_data.each do |movie_data|
-  movie = Movie.find_or_initialize_by(id: movie_data['id'])
-
-  # Update the movie attributes
-  movie.title = movie_data['title']
-  movie.description = movie_data['overview']
-  movie.release_date = movie_data['release_date']
-
-  # Check if the movie image URL is not null before assigning
-  if movie_data['poster_path'].nil?
-    movie.movie_image = 'https://via.placeholder.com/500x750' # Default image URL if no poster available
-  else
-    movie.movie_image = "https://image.tmdb.org/t/p/w500#{movie_data['poster_path']}"
+    movie.save
   end
 
-  movie.save
-end
+  puts "✅ Movie retrieval and persistence successful!"
 
-puts "✅ Done seeding!"
+  puts "🌱 Seeding users..."
+
+  # Create users
+  user1 = User.create(name: 'John Doe', password: 'password1', email: 'john@example.com')
+  user2 = User.create(name: 'Jane Smith', password: 'password2', email: 'jane@example.com')
+
+  puts "✅ User seeding successful!"
+
+  puts "🌱 Seeding reviews..."
+
+  # Create reviews
+  movie1 = Movie.first
+  movie2 = Movie.second
+
+  Review.create(comment: 'Great movie!', user: user1, movie: movie1)
+  Review.create(comment: 'Awesome film!', user: user2, movie: movie2)
+
+  puts "✅ Review seeding successful!"
+
+else
+  puts "❌ Error fetching movie data: #{response.code} - #{response.message}"
+end
