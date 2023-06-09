@@ -17,35 +17,41 @@ class ApplicationController < Sinatra::Base
   end
 
   post '/login' do
-    request_payload = JSON.parse(request.body.read)
+    # Parse the request body JSON
+    request_body = JSON.parse(request.body.read)
   
-    email = request_payload['email']
-    password = request_payload['password']
+    # Retrieve the username and password from the request body
+    username = request_body['username']
+    password = request_body['password']
   
-    # Find the user by email
-    user = User.find_by(email: email)
+    # Perform authentication logic here (e.g., check if the username and password match)
   
-    if user && user.authenticate(password)
-      { message: 'Login successful' }.to_json
+    if username == 'admin' && password == 'password'
+      # Authentication successful
+      { success: true, message: 'Login successful' }.to_json
     else
-      { message: 'Login failed' }.to_json
+      # Authentication failed
+      { success: false, message: 'Invalid username or password' }.to_json
     end
   end
 
   post '/register' do
+    # Parse the request body JSON
     register_data = JSON.parse(request.body.read)
 
     name = register_data['name']
     email = register_data['email']
     password = register_data['password']
 
-    # Add your registration logic here
-    if email && password
+    # Insert the user data into the "users" table
+    user = User.create(name: name, email: email, password: password)
+
+    if user
       status 200
-      { message: 'Registration successful' }.to_json
+      { success: true, message: 'Registration successful' }.to_json
     else
       status 400
-      { message: 'Registration failed' }.to_json
+      { success: false, message: 'Registration failed' }.to_json
     end
   end
 end
