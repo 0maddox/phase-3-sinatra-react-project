@@ -16,18 +16,42 @@ class ApplicationController < Sinatra::Base
     users.to_json
   end
 
-  post '/signup' do
+  # Login endpoint
+  post '/login' do
+    login_data = JSON.parse(request.body.read)
 
-    signup_data = JSON.parse(request.body.read)
-    # Process the signup_data and perform necessary actions
-  
-    if signup_successful
+    email = login_data['email']
+    password = login_data['password']
+
+    # Find the user by email
+    user = User.find_by(email: email)
+
+    if user && user.authenticate(password)
       status 200
-      { message: 'Signup successful' }.to_json
+      { message: 'Login successful' }.to_json
+    else
+      status 401
+      { message: 'Login failed' }.to_json
+    end
+  end
+
+  # Register endpoint
+  post '/register' do
+    register_data = JSON.parse(request.body.read)
+
+    name = register_data['name']
+    email = register_data['email']
+    password = register_data['password']
+
+    # Create a new user
+    user = User.new(name: name, email: email, password: password)
+
+    if user.save
+      status 200
+      { message: 'Registration successful' }.to_json
     else
       status 400
-puts 0
-      { message: 'Signup failed' }.to_json
+      { message: 'Registration failed' }.to_json
     end
   end
 end
