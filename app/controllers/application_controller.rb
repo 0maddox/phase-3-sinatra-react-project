@@ -6,6 +6,11 @@ class ApplicationController < Sinatra::Base
     movies.to_json
   end
 
+  get '/movies' do
+    @movies = Movie.all
+    erb :movies
+  end
+
   get '/reviews' do
     reviews = Review.all
     reviews.to_json
