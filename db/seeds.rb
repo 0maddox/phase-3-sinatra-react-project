@@ -14,56 +14,43 @@ ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 
 ActiveRecord::Base.connection.execute("DELETE FROM sqlite_sequence WHERE name = 'movie'")
 
 puts "🌱 Seeding spices..."
-
-url = URI.parse("https://api.themoviedb.org/3/discover/movie?api_key=4b8799a0185e3a736326d1c479824722&language=en-US")
+url = URI("https://api.themoviedb.org/3/discover/movie?api_key=4b8799a0185e3a736326d1c479824722&language=en-US")
 
 http = Net::HTTP.new(url.host, url.port)
 http.use_ssl = true
 
-request = Net::HTTP::Get.new(url.request_uri)
+request = Net::HTTP::Get.new(url)
+request["Accept"] = 'application/json'
 
 response = http.request(request)
 
-puts response
+case response
+when Net::HTTPSuccess
+  body = JSON.parse(response.body)
+  movies = body['results']
+  
+  # Work with the movies data
+  movies.each do |movie|
+    puts movie['title']
+    puts movie['overview']
+    puts '---'
+  end
+else
+  puts "Error: #{response.code} - #{response.message}"
+end
+
+movies.each do |movie|
+  # Create the movie list
+  new_movie = Movie.create(
+  title: name["original_title"],
+  movie_image: movie["poster_path"],
+  description: movie["overview"],
+  release_date: movie["release_date"]
+)
+
+end
 
 puts "✅ Done seeding!"
-
-if response.code == "200"
-    data = JSON.parse(response.body)
-    
-    if data["status"] == "OK"
-      movies = data["results"]["movies"]
-  
-  
-      movies.each do |movie|
-            # Create the movie list
-            new_movie = Movie.create(
-            title: name["original_title"],
-            movie_image: movie["poster_path"],
-            description: movie["overview"],
-            release_date: movie["release_date"]
-          )
-        end
-        
-          # Create a review for each movie
-          new_movie.reviews.create(
-            comment: "This movie is great!",
-            user: User.create(
-              name: Faker::Name.name,
-              email: Faker::Internet.email
-            )
-          )
-        end
-     
-  
-      
-    
-  else
-    puts "Failed to connect to the API"
-  end
-  puts "Done seeding."
-  
-  
   
   
   # Define a route that handles the update request
